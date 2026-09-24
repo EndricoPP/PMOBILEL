@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "906891542745",
+    "firebase_url": "https://praktikum-37835-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "praktikum-37835",
+    "storage_bucket": "praktikum-37835.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906891542745:android:14ad677e1c48d900873ec8",
+        "android_client_info": {
+          "package_name": "com.example.praktikum"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSwZOno3rgtGI5DIit_ULQLyAsG6DPt1E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906891542745:android:922bce8bf55886f1873ec8",
+        "android_client_info": {
+          "package_name": "com.example.project1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSwZOno3rgtGI5DIit_ULQLyAsG6DPt1E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
