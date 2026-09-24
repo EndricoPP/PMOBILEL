@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -64,14 +66,17 @@ public class MainActivity extends Activity {
                         .setMessage("Hapus " + item.getNama() + "?")
                         .setNegativeButton("Batal", null)
                         .setPositiveButton("Hapus", (d, w) ->
-                                itemsRef.child(item.getKode()).removeValue()
-                                        .addOnFailureListener(e -> pesan("Gagal hapus: " + e.getMessage()))
+                                jalankanJikaAkunAktif(() ->
+                                        itemsRef.child(item.getKode()).removeValue()
+                                                .addOnFailureListener(e -> pesan("Gagal hapus: " + e.getMessage()))
+                                )
                         ).show();
             }
         });
         recycler.setAdapter(adapter);
 
-        findViewById(R.id.btnSimpan).setOnClickListener(v -> simpanItem());
+        findViewById(R.id.btnSimpan).setOnClickListener(v ->
+                jalankanJikaAkunAktif(this::simpanItem));
 
         findViewById(R.id.btnLogout).setOnClickListener(v -> {
             auth.signOut();
@@ -93,6 +98,33 @@ public class MainActivity extends Activity {
             public void onCancelled(@NonNull DatabaseError error) {
                 pesan("Gagal membaca data: " + error.getMessage());
             }
+        });
+    }
+
+    private void jalankanJikaAkunAktif(Runnable aksi) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            bukaLogin();
+            return;
+        }
+
+        // getCurrentUser() hanya melihat sesi lokal. reload() memeriksa akun ke Firebase.
+        user.reload().addOnCompleteListener(this, task -> {
+            if (!task.isSuccessful()) {
+                if (task.getException() instanceof FirebaseAuthInvalidUserException) {
+                    auth.signOut();
+                    pesan("Akun sudah tidak tersedia. Silakan login kembali.");
+                    bukaLogin();
+                } else {
+                    pesan("Akun gagal diverifikasi. Periksa koneksi dan coba lagi.");
+                }
+                return;
+            }
+            if (auth.getCurrentUser() == null || !user.getUid().equals(auth.getCurrentUser().getUid())) {
+                bukaLogin();
+                return;
+            }
+            aksi.run();
         });
     }
 
@@ -177,19 +209,21 @@ public class MainActivity extends Activity {
 
                         Item hasil = new Item(kodeBaru, namaBaru, satuanBaru, hargaBaru);
 
-                        if (kodeBaru.equals(item.getKode())) {
-                            itemsRef.child(kodeBaru).setValue(hasil)
-                                    .addOnSuccessListener(x -> dialog.dismiss())
-                                    .addOnFailureListener(e -> pesan("Gagal edit: " + e.getMessage()));
-                        } else {
-                            // Pindahkan key lama ke key baru dalam satu update.
-                            Map<String, Object> perubahan = new HashMap<>();
-                            perubahan.put(item.getKode(), null);
-                            perubahan.put(kodeBaru, hasil);
-                            itemsRef.updateChildren(perubahan)
-                                    .addOnSuccessListener(x -> dialog.dismiss())
-                                    .addOnFailureListener(e -> pesan("Gagal edit: " + e.getMessage()));
-                        }
+                        jalankanJikaAkunAktif(() -> {
+                            if (kodeBaru.equals(item.getKode())) {
+                                itemsRef.child(kodeBaru).setValue(hasil)
+                                        .addOnSuccessListener(x -> dialog.dismiss())
+                                        .addOnFailureListener(e -> pesan("Gagal edit: " + e.getMessage()));
+                            } else {
+                                // Pindahkan key lama ke key baru dalam satu update.
+                                Map<String, Object> perubahan = new HashMap<>();
+                                perubahan.put(item.getKode(), null);
+                                perubahan.put(kodeBaru, hasil);
+                                itemsRef.updateChildren(perubahan)
+                                        .addOnSuccessListener(x -> dialog.dismiss())
+                                        .addOnFailureListener(e -> pesan("Gagal edit: " + e.getMessage()));
+                            }
+                        });
                     } catch (NumberFormatException e) {
                         pesan("Harga harus berupa angka yang valid");
                     }
